@@ -1,0 +1,63 @@
+#!/bin/csh
+## A simple script to add default header information to all .h and .cc files in a specified directory
+## Jerry Stuart / AFRL Summer Intern / Local Contractor
+## Tuesday June 14, 2016 @ 1139 hrs
+## addhead script ver 1.08
+
+if($#argv != 1) then	## verify path argument
+	echo usage: $0 <directory-of-files>; exit(1)
+else if (! -d $1) then
+	echo $1 is not a directory; exit(1)
+endif
+
+set keyword = "head1"	## Change this to reflect the first line of our header file
+set ccfile = "cc"	## used to find files with .cc extension
+set header = head.txt 	## replace with full-path of default header file used
+set hcount = 0
+set ccount = 0
+
+set dir = $1
+chdir $dir
+set files = *
+
+echo "Appending $dir*.h AND .cc files..."; echo ""
+
+foreach file ($files)
+	if ( ! -f $file ) continue
+
+	while ( 1 )
+		switch ($file:e)
+			case h:	## .h file found
+				set line1 = `(head -n1 $file | awk '{print $file}')`
+				if ($line1 == $keyword) then	## skip header update (header exist)
+					break
+				else	## add header to file
+					cat $file > temp
+					(cat $header; cat temp) > $file
+					echo "$file has been updated"
+					set hcount = `expr $hcount + 1`
+					break
+				fi
+
+			case "cc"	## .cc file found
+				set line1 = `(head -n1 $file | awk '{print $file}')`
+				if ($line1 == $keyword) then	## skip header update (header exist)
+					break
+				else	## add header to file
+					cat $file > temp
+					(cat $header; cat temp) > $file
+					echo "$file has been updated"
+					set ccount = `expr $ccount + 1`
+					break
+				fi
+
+			case *:	## skip all other files
+				case *:	## all other file types
+				break
+		emdsw
+	end
+end	
+
+rm -f temp	## cleanup temporary file (--force ignore nonexistent files)
+
+echo ""; echo "$hcount .h and $ccount .cc file(s) modified"
